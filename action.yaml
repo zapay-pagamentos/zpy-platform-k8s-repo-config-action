@@ -1,0 +1,54 @@
+name: 'Repository Config'
+description: 'Sync with current repository configuration'
+inputs:
+  python_version:
+    description: 'Python version'
+    default: '3.10'
+  fastapi:
+    description: 'Using FastAPI'
+    default: 'true'
+  django:
+    description: 'Using Django'
+    default: 'false'
+  pre_commit:
+    description: 'Update pre-commit'
+    default: 'false'
+  check_pr_title:
+    description: 'Check PR title'
+    default: 'false'
+runs:
+  using: 'composite'
+  steps:
+    - run: |
+        GENERIC_FOLDER=generic
+        python_version=${{ inputs.python_version }}
+        fastapi=${{ inputs.fastapi }}
+        django=${{ inputs.django }}
+        pre_commit=${{ inputs.pre-commit }}
+        check_pr_title=${{ inputs.check_pr_title }}
+        if [[ $fastapi == 'true' ]]; then
+            if [[ $django == 'true' ]]; then
+                config_path="$python_version/FastAPI_Django"
+            else
+                config_path="$python_version/FastAPI"
+            fi
+        else
+            config_path="$python_version/Django"
+        fi
+        echo "Copiando arquivos de configuração"
+        if [[ $pre_commit == 'true' ]]; then
+          echo "Copiando .flake8"
+          cp ./repo-config/$GENERIC_FOLDER/.flake8 ../
+          echo "Copiando .pre-commit-config.yaml"
+          cp ./repo-config/$python_version/.pre-commit-config.yaml ../
+          echo "Copiando .pylintrc"
+          cp ./repo-config/$config_path/.pylintrc ../
+        fi
+        if [[ $check_pr_title == 'true' ]]; then
+          echo "Copiando pr-title-checker-config.json"
+          cp ./repo-config/$GENERIC_FOLDER/workflows/pr-title-checker-config.json .github/
+        fi
+        echo "Limpando pasta repo-config"
+        cd .. && rm -rf repo-config
+        echo "Configurações copiadas com sucesso!"
+      shell: bash
